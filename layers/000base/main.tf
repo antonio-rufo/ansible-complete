@@ -11,8 +11,7 @@ terraform {
     aws = "~> 3.6.0"
   }
   backend "s3" {
-    bucket = "130541009828-build-state-bucket-ansible-complete"
-    # This key must be unique for each layer!
+    bucket  = "130541009828-build-state-bucket-ansible-complete"
     key     = "terraform.development.000base.tfstate"
     region  = "ap-southeast-2"
     encrypt = "true"
