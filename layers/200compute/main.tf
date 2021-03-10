@@ -48,7 +48,7 @@ locals {
     Environment = var.environment
   }
 
-  user_data_ansible = <<EOF
+  user_data_ansible_target = <<EOF
 #!/bin/bash
 amazon-linux-extras install epel
 yum update -y
@@ -138,10 +138,10 @@ data "aws_ami" "amazon-linux-2" {
 # }
 
 # Ansible
-resource "aws_security_group" "security_group_ansible" {
-  name = var.security_group_ansible_name
+resource "aws_security_group" "security_group_ansible_target" {
+  name = var.security_group_ansible_target_name
   # description = "Bastion host access to Ansible Server"
-  description = "Public access to Ansible Server"
+  description = "Access to Ansible Target Server"
   vpc_id      = local.vpc_id
 
   ingress {
@@ -160,43 +160,43 @@ resource "aws_security_group" "security_group_ansible" {
   }
 
   tags = {
-    Name        = var.security_group_ansible_name
+    Name        = var.security_group_ansible_target_name
     Environment = var.environment
   }
 }
 
-# Targets
-resource "aws_security_group" "security_group_targets" {
-  name        = var.security_group_targets_name
-  description = "Ansible access to Target Servers"
-  vpc_id      = local.vpc_id
-
-  ingress {
-    from_port       = 22
-    to_port         = 22
-    protocol        = "tcp"
-    security_groups = [aws_security_group.security_group_ansible.id]
-  }
-
-  ingress {
-    from_port       = 8
-    to_port         = 8
-    protocol        = "icmp"
-    security_groups = [aws_security_group.security_group_ansible.id]
-  }
-
-  egress {
-    from_port   = 1
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name        = var.security_group_targets_name
-    Environment = var.environment
-  }
-}
+# # Targets
+# resource "aws_security_group" "security_group_targets" {
+#   name        = var.security_group_targets_name
+#   description = "Ansible access to Target Servers"
+#   vpc_id      = local.vpc_id
+#
+#   ingress {
+#     from_port       = 22
+#     to_port         = 22
+#     protocol        = "tcp"
+#     security_groups = [aws_security_group.security_group_ansible.id]
+#   }
+#
+#   ingress {
+#     from_port       = 8
+#     to_port         = 8
+#     protocol        = "icmp"
+#     security_groups = [aws_security_group.security_group_ansible.id]
+#   }
+#
+#   egress {
+#     from_port   = 1
+#     to_port     = 65535
+#     protocol    = "tcp"
+#     cidr_blocks = ["0.0.0.0/0"]
+#   }
+#
+#   tags = {
+#     Name        = var.security_group_targets_name
+#     Environment = var.environment
+#   }
+# }
 
 # # Terraform
 # resource "aws_security_group" "security_group_terraform" {
@@ -236,12 +236,12 @@ resource "aws_security_group" "security_group_targets" {
 #   }
 # }
 
-resource "aws_network_interface" "eni_ansible" {
+resource "aws_network_interface" "eni_ansible_target" {
   subnet_id       = local.public_subnets[0]
-  security_groups = [aws_security_group.security_group_ansible.id]
+  security_groups = [aws_security_group.security_group_ansible_target.id]
 
   tags = {
-    Network = "ENI Bastion Host"
+    Network = "ENI Ansible Target"
   }
 }
 
@@ -279,16 +279,16 @@ resource "aws_network_interface" "eni_ansible" {
 ###############################################################################
 # EC2 Instance - Ansible
 ###############################################################################
-resource "aws_instance" "instance_ansible" {
+resource "aws_instance" "instance_ansible_target" {
   ami           = data.aws_ami.amazon-linux-2.image_id
-  instance_type = var.instance_type_bastion
+  instance_type = var.instance_type_ansible_target
   key_name      = var.key_pair
   # vpc_security_group_ids = [local.ansible_sg]
   # subnet_id              = local.private_subnets[0]
-  user_data_base64 = base64encode(local.user_data_ansible)
+  user_data_base64 = base64encode(local.user_data_ansible_target)
 
   network_interface {
-    network_interface_id = aws_network_interface.eni_ansible.id
+    network_interface_id = aws_network_interface.eni_ansible_target.id
     device_index         = 0
   }
 
@@ -305,26 +305,26 @@ resource "aws_instance" "instance_ansible" {
   }
 
   tags = {
-    Name = var.instance_name_ansible
+    Name = var.instance_name_ansible_target
   }
 }
 
-###############################################################################
-# EC2 Instance - targets
-###############################################################################
-resource "aws_instance" "instance_targets" {
-  # count                  = 2
-  ami                    = data.aws_ami.amazon-linux-2.image_id
-  instance_type          = var.instance_type_bastion
-  key_name               = var.key_pair
-  vpc_security_group_ids = [aws_security_group.security_group_targets.id]
-  subnet_id              = local.private_subnets[0]
-
-  tags = {
-    # Name = "${var.instance_name_targets} ${count.index + 1}"
-    Name = var.instance_name_targets
-  }
-}
+# ###############################################################################
+# # EC2 Instance - targets
+# ###############################################################################
+# resource "aws_instance" "instance_targets" {
+#   # count                  = 2
+#   ami                    = data.aws_ami.amazon-linux-2.image_id
+#   instance_type          = var.instance_type_bastion
+#   key_name               = var.key_pair
+#   vpc_security_group_ids = [aws_security_group.security_group_targets.id]
+#   subnet_id              = local.private_subnets[0]
+#
+#   tags = {
+#     # Name = "${var.instance_name_targets} ${count.index + 1}"
+#     Name = var.instance_name_targets
+#   }
+# }
 
 # ###############################################################################
 # # EC2 Instance - Terraform

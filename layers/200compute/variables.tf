@@ -22,7 +22,7 @@ variable "security_group_bastion_name" {
   description = "Name for the Bastion security group."
 }
 
-variable "security_group_ansible_name" {
+variable "security_group_ansible_target_name" {
   description = "Name for the Ansible security group."
 }
 
@@ -49,11 +49,15 @@ variable "instance_type_bastion" {
   description = "Bastion Host Instance Type."
 }
 
+variable "instance_type_ansible_target" {
+  description = "Ansible Target Instance Type."
+}
+
 variable "instance_name_bastion" {
   description = "Bastion Host Instance Name."
 }
 
-variable "instance_name_ansible" {
+variable "instance_name_ansible_target" {
   description = "Ansible Server Instance Name."
 }
 
